@@ -5,7 +5,7 @@ const path = require('path');
 const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
 
-const MODEL  = 'google/gemini-2.0-flash-exp';
+const MODEL  = 'google/gemini-3.1-flash-lite-preview';
 const OR_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 // ── LLM call ────────────────────────────────────────────────────────────────
@@ -53,6 +53,7 @@ async function runAgent(system, user) {
       const text = await callLLM(system, user);
       return { ok: true, data: parseJSON(text) };
     } catch (e) {
+      console.error(`[Agent error attempt ${attempt + 1}]`, e.message);
       if (attempt === 1) return { ok: false, error: e.message };
     }
   }
@@ -75,13 +76,13 @@ app.get('/run-pipeline', async (req, res) => {
 
     const [r1, r2] = await Promise.all([
       runAgent(
-        'You are a market research specialist. Respond with valid JSON only — no markdown, no commentary.',
+        'You are a market research specialist. Respond in Brazilian Portuguese (pt-BR). Respond with valid JSON only — no markdown, no commentary.',
         'Return a JSON array of exactly 15 diverse market niches, each with: ' +
         'name (string), description (string), estimated_demand ("low"|"medium"|"high"), ' +
         'competition_level ("low"|"medium"|"high"). Array only, nothing else.'
       ),
       runAgent(
-        'You are a consumer sentiment analyst. Respond with valid JSON only — no markdown, no commentary.',
+        'You are a consumer sentiment analyst. Respond in Brazilian Portuguese (pt-BR). Respond with valid JSON only — no markdown, no commentary.',
         'Analyze consumer satisfaction across 15 diverse market niches based on your training data. ' +
         'Return a JSON array with: niche_name (string), avg_rating (number 1-10), ' +
         'main_complaints (string[]), satisfaction_level ("low"|"medium"|"high"). Array only, nothing else.'
@@ -100,7 +101,7 @@ app.get('/run-pipeline', async (req, res) => {
     emit('agent', { id: 3, status: 'running' });
 
     const r3 = await runAgent(
-      'You are a market opportunity classifier. Respond with valid JSON only — no markdown, no commentary.',
+      'You are a market opportunity classifier. Respond in Brazilian Portuguese (pt-BR). Respond with valid JSON only — no markdown, no commentary.',
       `Cross-reference the two datasets below. Return the top 5 niches with the highest opportunity score.\n` +
       `Scoring priority: low competition + low satisfaction + high demand.\n\n` +
       `Niches dataset: ${JSON.stringify(r1.data ?? [])}\n` +
@@ -124,21 +125,21 @@ app.get('/run-pipeline', async (req, res) => {
 
     const [r4, r5, r6] = await Promise.all([
       runAgent(
-        'You are a product development expert. Respond with valid JSON only — no markdown, no commentary.',
+        'You are a product development expert. Respond in Brazilian Portuguese (pt-BR). Respond with valid JSON only — no markdown, no commentary.',
         `For each of the top 5 niches below, propose what to build.\n` +
         `Return a JSON array with: niche_name (string), solution_type ("product"|"service"|"platform"), ` +
         `solution_name (string), description (string), key_features (string[]).\n\n` +
         `Top 5 niches: ${top5}\n\nArray only, nothing else.`
       ),
       runAgent(
-        'You are a brand and go-to-market strategist. Respond with valid JSON only — no markdown, no commentary.',
+        'You are a brand and go-to-market strategist. Respond in Brazilian Portuguese (pt-BR). Respond with valid JSON only — no markdown, no commentary.',
         `For each of the top 5 niches below, suggest a positioning strategy.\n` +
         `Return a JSON array with: niche_name (string), target_audience (string), ` +
         `value_proposition (string), differentiation (string), main_channels (string[]).\n\n` +
         `Top 5 niches: ${top5}\n\nArray only, nothing else.`
       ),
       runAgent(
-        'You are a business viability analyst. Respond with valid JSON only — no markdown, no commentary.',
+        'You are a business viability analyst. Respond in Brazilian Portuguese (pt-BR). Respond with valid JSON only — no markdown, no commentary.',
         `For each of the top 5 niches below, estimate execution effort and business viability.\n` +
         `Return a JSON array with: niche_name (string), effort_level ("low"|"medium"|"high"), ` +
         `revenue_potential ("low"|"medium"|"high"), main_risks (string[]), opportunity_grade (number 0-10).\n\n` +
@@ -150,11 +151,38 @@ app.get('/run-pipeline', async (req, res) => {
     emit('agent', { id: 5, status: r5.ok ? 'done' : 'error', error: r5.error });
     emit('agent', { id: 6, status: r6.ok ? 'done' : 'error', error: r6.error });
 
+    // ── LAYER 3: Agents 7 + 8 in parallel (top 1 niche only) ───────────────
+    const top1 = JSON.stringify(r3.data?.[0] ?? r3.data);
+
+    emit('agent', { id: 7, status: 'running' });
+    emit('agent', { id: 8, status: 'running' });
+
+    const [r7, r8] = await Promise.all([
+      runAgent(
+        'You are a freelance and consulting services advisor. Respond in Brazilian Portuguese (pt-BR). Respond with valid JSON only — no markdown, no commentary.',
+        `Based on the #1 ranked market niche below, list 6 services that a developer or consultant can offer to companies or projects in this niche.\n` +
+        `Return a JSON array with: service_name (string), description (string), target_client (string), delivery_format (string), price_range (string), skills_required (string[]).\n\n` +
+        `Top niche: ${top1}\n\nArray only, nothing else.`
+      ),
+      runAgent(
+        'You are a project architect and indie developer advisor. Respond in Brazilian Portuguese (pt-BR). Respond with valid JSON only — no markdown, no commentary.',
+        `Based on the #1 ranked market niche below, propose 5 concrete projects or products to build to address the demand.\n` +
+        `Return a JSON array with: project_name (string), description (string), type ("saas"|"app"|"ferramenta"|"plataforma"|"conteúdo"), monetization (string), estimated_complexity ("baixo"|"médio"|"alto"), tech_stack (string[]).\n\n` +
+        `Top niche: ${top1}\n\nArray only, nothing else.`
+      ),
+    ]);
+
+    emit('agent', { id: 7, status: r7.ok ? 'done' : 'error', error: r7.error });
+    emit('agent', { id: 8, status: r8.ok ? 'done' : 'error', error: r8.error });
+
     emit('complete', {
       ranked:      r3.data,
       products:    r4.data ?? [],
       positioning: r5.data ?? [],
       viability:   r6.data ?? [],
+      services:    r7.data ?? [],
+      projects:    r8.data ?? [],
+      top1Niche:   r3.data?.[0]?.niche_name ?? '',
     });
 
     res.end();

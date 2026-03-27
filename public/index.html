@@ -6,13 +6,31 @@
   <title>Niche Intelligence</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+
+  <!-- Matrix rain canvas -->
+  <canvas id="matrixCanvas"></canvas>
+
+  <!-- Loading overlay -->
+  <div class="loading-overlay hidden" id="loadingOverlay">
+    <div class="loading-box">
+      <div class="loading-ring">
+        <div class="ring-inner"></div>
+      </div>
+      <div class="loading-label">Executando Pipeline</div>
+      <div class="loading-agents" id="loadingAgentLabel">Inicializando agentes…</div>
+      <div class="loading-dots">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>
+
   <div class="page">
 
-    <!-- ── Header ─────────────────────────────────────────── -->
+    <!-- ── Header ──────────────────────────────────────────── -->
     <header class="header">
       <div class="brand">
         <div class="brand-hex">⬡</div>
@@ -27,7 +45,7 @@
       </button>
     </header>
 
-    <!-- ── Pipeline Status ────────────────────────────────── -->
+    <!-- ── Pipeline Status ─────────────────────────────────── -->
     <section class="section pipeline-section">
       <div class="section-header">
         <span class="section-title">Agentes</span>
@@ -39,7 +57,7 @@
           <div class="layer-tag">Camada 1 — Pesquisa</div>
           <div class="agents-grid">
             <div class="agent-card" id="agent-1">
-              <div class="agent-status-icon">⏳</div>
+              <div class="agent-status-icon" id="icon-1">⏳</div>
               <div class="agent-body">
                 <div class="agent-name">Niche Explorer</div>
                 <div class="agent-desc">Identifica 15 nichos de mercado</div>
@@ -47,7 +65,7 @@
               <div class="agent-badge pending" id="badge-1">Aguardando</div>
             </div>
             <div class="agent-card" id="agent-2">
-              <div class="agent-status-icon">⏳</div>
+              <div class="agent-status-icon" id="icon-2">⏳</div>
               <div class="agent-body">
                 <div class="agent-name">Review Analyzer</div>
                 <div class="agent-desc">Analisa satisfação do consumidor</div>
@@ -55,7 +73,7 @@
               <div class="agent-badge pending" id="badge-2">Aguardando</div>
             </div>
             <div class="agent-card" id="agent-3">
-              <div class="agent-status-icon">⏳</div>
+              <div class="agent-status-icon" id="icon-3">⏳</div>
               <div class="agent-body">
                 <div class="agent-name">Ranker</div>
                 <div class="agent-desc">Seleciona top 5 oportunidades</div>
@@ -75,7 +93,7 @@
           <div class="layer-tag">Camada 2 — Soluções</div>
           <div class="agents-grid">
             <div class="agent-card" id="agent-4">
-              <div class="agent-status-icon">⏳</div>
+              <div class="agent-status-icon" id="icon-4">⏳</div>
               <div class="agent-body">
                 <div class="agent-name">Product Strategist</div>
                 <div class="agent-desc">Propõe produtos e serviços</div>
@@ -83,7 +101,7 @@
               <div class="agent-badge pending" id="badge-4">Aguardando</div>
             </div>
             <div class="agent-card" id="agent-5">
-              <div class="agent-status-icon">⏳</div>
+              <div class="agent-status-icon" id="icon-5">⏳</div>
               <div class="agent-body">
                 <div class="agent-name">Positioning Expert</div>
                 <div class="agent-desc">Define estratégia de mercado</div>
@@ -91,7 +109,7 @@
               <div class="agent-badge pending" id="badge-5">Aguardando</div>
             </div>
             <div class="agent-card" id="agent-6">
-              <div class="agent-status-icon">⏳</div>
+              <div class="agent-status-icon" id="icon-6">⏳</div>
               <div class="agent-body">
                 <div class="agent-name">Viability Analyst</div>
                 <div class="agent-desc">Avalia viabilidade e riscos</div>
@@ -100,27 +118,66 @@
             </div>
           </div>
         </div>
+
+        <div class="layer-divider">
+          <div class="layer-divider-line"></div>
+          <div class="layer-divider-icon">↓</div>
+          <div class="layer-divider-line"></div>
+        </div>
+
+        <div class="layer">
+          <div class="layer-tag">Camada 3 — Oportunidades para Você (Nicho #1)</div>
+          <div class="agents-grid agents-grid-2">
+            <div class="agent-card" id="agent-7">
+              <div class="agent-status-icon" id="icon-7">⏳</div>
+              <div class="agent-body">
+                <div class="agent-name">Service Consultant</div>
+                <div class="agent-desc">Serviços que você pode oferecer a empresas</div>
+              </div>
+              <div class="agent-badge pending" id="badge-7">Aguardando</div>
+            </div>
+            <div class="agent-card" id="agent-8">
+              <div class="agent-status-icon" id="icon-8">⏳</div>
+              <div class="agent-body">
+                <div class="agent-name">Project Architect</div>
+                <div class="agent-desc">Projetos concretos para construir</div>
+              </div>
+              <div class="agent-badge pending" id="badge-8">Aguardando</div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- ── Results ────────────────────────────────────────── -->
+    <!-- ── Results ─────────────────────────────────────────── -->
     <section class="section results-section hidden" id="resultsSection">
-      <div class="tabs">
-        <button class="tab active" id="tab-btn-niches" onclick="showTab('niches')">
-          🎯 Nichos Encontrados
-        </button>
-        <button class="tab" id="tab-btn-solutions" onclick="showTab('solutions')">
-          💡 Soluções
-        </button>
-      </div>
-      <div id="tab-niches"></div>
-      <div id="tab-solutions" class="hidden"></div>
+      <div class="results-title">Nichos Ranqueados</div>
+      <div id="nichesResult"></div>
+
+      <div class="results-divider"></div>
+
+      <div class="results-title">Soluções por Nicho</div>
+      <div id="solutionsResult"></div>
+
+      <div class="results-divider"></div>
+
+      <div class="results-title layer3-title" id="layer3Title">Oportunidades para Você</div>
+      <div class="layer3-subtitle" id="layer3Subtitle"></div>
+
+      <div class="results-title" style="margin-top:20px">Serviços para Empresas</div>
+      <div id="servicesResult"></div>
+
+      <div class="results-divider"></div>
+
+      <div class="results-title">Projetos para Construir</div>
+      <div id="projectsResult"></div>
     </section>
 
-    <!-- ── Error Banner ──────────────────────────────────── -->
+    <!-- ── Error Banner ────────────────────────────────────── -->
     <div class="error-banner hidden" id="errorBanner"></div>
 
   </div>
+
   <script src="app.js"></script>
 </body>
 </html>
