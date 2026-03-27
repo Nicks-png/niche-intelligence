@@ -43,6 +43,8 @@ function parseJSON(text) {
   try { return JSON.parse(clean); } catch {}
   const arr = clean.match(/\[[\s\S]*\]/);
   if (arr) { try { return JSON.parse(arr[0]); } catch {} }
+  const obj = clean.match(/\{[\s\S]*\}/);
+  if (obj) { try { return JSON.parse(obj[0]); } catch {} }
   throw new Error('Resposta não é JSON válido');
 }
 
@@ -175,14 +177,92 @@ app.get('/run-pipeline', async (req, res) => {
     emit('agent', { id: 7, status: r7.ok ? 'done' : 'error', error: r7.error });
     emit('agent', { id: 8, status: r8.ok ? 'done' : 'error', error: r8.error });
 
+    // ── LAYER 4: 6 model agents in parallel ────────────────────────────────
+    const servicesList = JSON.stringify(r7.data ?? []);
+    const projectsList = JSON.stringify(r8.data ?? []);
+
+    emit('agent', { id: 9,  status: 'running' });
+    emit('agent', { id: 10, status: 'running' });
+    emit('agent', { id: 11, status: 'running' });
+    emit('agent', { id: 13, status: 'running' });
+    emit('agent', { id: 14, status: 'running' });
+    emit('agent', { id: 15, status: 'running' });
+
+    const svcBase = `Responda em português brasileiro. Retorne apenas um objeto JSON (não array), sem markdown.`;
+    const prjBase = `Responda em português brasileiro. Retorne apenas um objeto JSON (não array), sem markdown.`;
+    const svcFields = `chosen_service (string), approach_name (string), summary (string), target_client (string), pricing_model (string), estimated_monthly_revenue (string), key_deliverables (string[]), implementation_steps (string[]), competitive_advantage (string)`;
+    const prjFields = `chosen_project (string), approach_name (string), summary (string), mvp_features (string[]), tech_stack (string[]), monetization (string), estimated_mrr (string), launch_steps (string[]), time_to_launch (string)`;
+
+    const [r9, r10, r11, r13, r14, r15] = await Promise.all([
+      runAgent(
+        `You are a revenue-focused service design consultant. ${svcBase}`,
+        `Da lista de serviços abaixo, escolha o mais promissor e crie um modelo detalhado com foco em maximizar receita.\nCampos: ${svcFields}.\n\nServiços: ${servicesList}`
+      ),
+      runAgent(
+        `You are a lean execution and delivery specialist. ${svcBase}`,
+        `Da lista de serviços abaixo, escolha o mais promissor e crie um modelo enxuto focado em entrada rápida no mercado.\nCampos: ${svcFields}.\n\nServiços: ${servicesList}`
+      ),
+      runAgent(
+        `You are a scalability and growth strategist. ${svcBase}`,
+        `Da lista de serviços abaixo, escolha o mais promissor e crie um modelo altamente escalável para crescimento rápido.\nCampos: ${svcFields}.\n\nServiços: ${servicesList}`
+      ),
+      runAgent(
+        `You are a revenue-focused product architect. ${prjBase}`,
+        `Da lista de projetos abaixo, escolha o mais promissor e crie um modelo de desenvolvimento focado em potencial de receita.\nCampos: ${prjFields}.\n\nProjetos: ${projectsList}`
+      ),
+      runAgent(
+        `You are a lean startup and MVP specialist. ${prjBase}`,
+        `Da lista de projetos abaixo, escolha o mais promissor e crie um modelo de MVP enxuto e de rápida validação.\nCampos: ${prjFields}.\n\nProjetos: ${projectsList}`
+      ),
+      runAgent(
+        `You are a platform and ecosystem designer. ${prjBase}`,
+        `Da lista de projetos abaixo, escolha o mais promissor e crie um modelo de plataforma com visão de ecossistema.\nCampos: ${prjFields}.\n\nProjetos: ${projectsList}`
+      ),
+    ]);
+
+    emit('agent', { id: 9,  status: r9.ok  ? 'done' : 'error' });
+    emit('agent', { id: 10, status: r10.ok ? 'done' : 'error' });
+    emit('agent', { id: 11, status: r11.ok ? 'done' : 'error' });
+    emit('agent', { id: 13, status: r13.ok ? 'done' : 'error' });
+    emit('agent', { id: 14, status: r14.ok ? 'done' : 'error' });
+    emit('agent', { id: 15, status: r15.ok ? 'done' : 'error' });
+
+    // ── Leaders: 12 + 16 in parallel ───────────────────────────────────────
+    emit('agent', { id: 12, status: 'running' });
+    emit('agent', { id: 16, status: 'running' });
+
+    const [r12, r16] = await Promise.all([
+      runAgent(
+        `You are a chief strategy officer evaluating service models. Responda em português brasileiro. Retorne apenas um objeto JSON, sem markdown.`,
+        `Avalie os 3 modelos de serviço abaixo e selecione o melhor considerando: potencial de receita, viabilidade e fit de mercado.\n` +
+        `Retorne um objeto JSON com: winner ("Modelo A"|"Modelo B"|"Modelo C"), score (número 0-10), justification (string), model (o objeto completo do modelo vencedor).\n\n` +
+        `Modelo A: ${JSON.stringify(r9.data ?? {})}\n` +
+        `Modelo B: ${JSON.stringify(r10.data ?? {})}\n` +
+        `Modelo C: ${JSON.stringify(r11.data ?? {})}`
+      ),
+      runAgent(
+        `You are a chief product officer evaluating project models. Responda em português brasileiro. Retorne apenas um objeto JSON, sem markdown.`,
+        `Avalie os 3 modelos de projeto abaixo e selecione o melhor considerando: potencial de mercado, viabilidade técnica e clareza de monetização.\n` +
+        `Retorne um objeto JSON com: winner ("Modelo A"|"Modelo B"|"Modelo C"), score (número 0-10), justification (string), model (o objeto completo do modelo vencedor).\n\n` +
+        `Modelo A: ${JSON.stringify(r13.data ?? {})}\n` +
+        `Modelo B: ${JSON.stringify(r14.data ?? {})}\n` +
+        `Modelo C: ${JSON.stringify(r15.data ?? {})}`
+      ),
+    ]);
+
+    emit('agent', { id: 12, status: r12.ok ? 'done' : 'error' });
+    emit('agent', { id: 16, status: r16.ok ? 'done' : 'error' });
+
     emit('complete', {
-      ranked:      r3.data,
-      products:    r4.data ?? [],
-      positioning: r5.data ?? [],
-      viability:   r6.data ?? [],
-      services:    r7.data ?? [],
-      projects:    r8.data ?? [],
-      top1Niche:   r3.data?.[0]?.niche_name ?? '',
+      ranked:       r3.data,
+      products:     r4.data ?? [],
+      positioning:  r5.data ?? [],
+      viability:    r6.data ?? [],
+      services:     r7.data ?? [],
+      projects:     r8.data ?? [],
+      top1Niche:    r3.data?.[0]?.niche_name ?? '',
+      best_service: r12.data ?? null,
+      best_project: r16.data ?? null,
     });
 
     res.end();

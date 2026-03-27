@@ -41,14 +41,22 @@
 let running = false;
 
 const AGENT_NAMES = {
-  1: 'Niche Explorer',
-  2: 'Review Analyzer',
-  3: 'Ranker',
-  4: 'Product Strategist',
-  5: 'Positioning Expert',
-  6: 'Viability Analyst',
-  7: 'Service Consultant',
-  8: 'Project Architect',
+  1:  'Niche Explorer',
+  2:  'Review Analyzer',
+  3:  'Ranker',
+  4:  'Product Strategist',
+  5:  'Positioning Expert',
+  6:  'Viability Analyst',
+  7:  'Service Consultant',
+  8:  'Project Architect',
+  9:  'Modelo Serviço A',
+  10: 'Modelo Serviço B',
+  11: 'Modelo Serviço C',
+  12: 'Líder de Serviços',
+  13: 'Modelo Projeto A',
+  14: 'Modelo Projeto B',
+  15: 'Modelo Projeto C',
+  16: 'Líder de Projetos',
 };
 
 const STATUS_LABELS = { pending: 'Aguardando', running: 'Executando', done: 'Concluído', error: 'Erro' };
@@ -59,7 +67,7 @@ function runPipeline() {
   if (running) return;
   running = true;
 
-  for (let i = 1; i <= 8; i++) setAgent(i, 'pending');
+  for (let i = 1; i <= 16; i++) setAgent(i, 'pending');
   document.getElementById('pipelineStatus').textContent = 'executando';
   document.getElementById('pipelineStatus').className   = 'section-badge running';
   document.getElementById('resultsSection').classList.add('hidden');
@@ -139,12 +147,14 @@ function showError(msg) {
 }
 
 // ── Finish ────────────────────────────────────────────────────────────────────
-function finish({ ranked, products, positioning, viability, services, projects, top1Niche }) {
+function finish({ ranked, products, positioning, viability, services, projects, top1Niche, best_service, best_project }) {
   resetBtn();
   renderNiches(ranked);
   renderSolutions(ranked, products, positioning, viability);
   renderServices(services, top1Niche);
   renderProjects(projects, top1Niche);
+  renderWinner('bestServiceResult', '🛠 Serviço Vencedor', best_service, 'service');
+  renderWinner('bestProjectResult', '🚀 Projeto Vencedor', best_project, 'project');
   const sec = document.getElementById('resultsSection');
   sec.classList.remove('hidden');
   sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -292,6 +302,87 @@ function levelLabel(l) {
 
 function typeLabel(t) {
   return { product: 'Produto', service: 'Serviço', platform: 'Plataforma' }[t] ?? t;
+}
+
+// ── Render: Winner card (Layer 4) ─────────────────────────────────────────────
+function renderWinner(containerId, title, data, type) {
+  const el = document.getElementById(containerId);
+  if (!data?.model) {
+    el.innerHTML = `<p style="color:var(--text3);text-align:center;padding:24px">Modelo não disponível.</p>`;
+    return;
+  }
+
+  const m = data.model;
+  const isService = type === 'service';
+
+  const mainName  = esc(isService ? (m.chosen_service ?? m.approach_name ?? '—') : (m.chosen_project ?? m.approach_name ?? '—'));
+  const approach  = esc(m.approach_name ?? '');
+
+  const rows = isService ? `
+    <div class="sol-label">Abordagem</div>
+    <div class="sol-value bold">${approach}</div>
+    <div class="sol-label">Resumo</div>
+    <div class="sol-value">${esc(m.summary ?? '—')}</div>
+    <div class="sol-label">Cliente-alvo</div>
+    <div class="sol-value">${esc(m.target_client ?? '—')}</div>
+    <div class="sol-label">Modelo de precificação</div>
+    <div class="sol-value bold">${esc(m.pricing_model ?? '—')}</div>
+    <div class="sol-label">Receita mensal estimada</div>
+    <div class="sol-value bold" style="color:var(--green);text-shadow:0 0 8px rgba(0,255,65,0.4)">${esc(m.estimated_monthly_revenue ?? '—')}</div>
+    ${m.key_deliverables?.length ? `
+      <div class="sol-label">Entregas principais</div>
+      <div class="tag-list">${m.key_deliverables.map(d => `<span class="tag-item">${esc(d)}</span>`).join('')}</div>
+    ` : ''}
+    ${m.implementation_steps?.length ? `
+      <div class="sol-label">Etapas de implementação</div>
+      <ol style="padding-left:16px;margin-top:4px">
+        ${m.implementation_steps.map(s => `<li style="font-size:0.78rem;color:var(--text2);margin-bottom:4px;line-height:1.4">${esc(s)}</li>`).join('')}
+      </ol>
+    ` : ''}
+    ${m.competitive_advantage ? `
+      <div class="sol-label">Vantagem competitiva</div>
+      <div class="sol-value">${esc(m.competitive_advantage)}</div>
+    ` : ''}
+  ` : `
+    <div class="sol-label">Abordagem</div>
+    <div class="sol-value bold">${approach}</div>
+    <div class="sol-label">Resumo</div>
+    <div class="sol-value">${esc(m.summary ?? '—')}</div>
+    <div class="sol-label">Monetização</div>
+    <div class="sol-value">${esc(m.monetization ?? '—')}</div>
+    <div class="sol-label">MRR estimado</div>
+    <div class="sol-value bold" style="color:var(--green);text-shadow:0 0 8px rgba(0,255,65,0.4)">${esc(m.estimated_mrr ?? '—')}</div>
+    <div class="sol-label">Prazo para lançamento</div>
+    <div class="sol-value bold">${esc(m.time_to_launch ?? '—')}</div>
+    ${m.mvp_features?.length ? `
+      <div class="sol-label">Funcionalidades do MVP</div>
+      <div class="tag-list">${m.mvp_features.map(f => `<span class="tag-item">${esc(f)}</span>`).join('')}</div>
+    ` : ''}
+    ${m.tech_stack?.length ? `
+      <div class="sol-label">Stack tecnológica</div>
+      <div class="tag-list">${m.tech_stack.map(t => `<span class="tag-item">${esc(t)}</span>`).join('')}</div>
+    ` : ''}
+    ${m.launch_steps?.length ? `
+      <div class="sol-label">Etapas de lançamento</div>
+      <ol style="padding-left:16px;margin-top:4px">
+        ${m.launch_steps.map(s => `<li style="font-size:0.78rem;color:var(--text2);margin-bottom:4px;line-height:1.4">${esc(s)}</li>`).join('')}
+      </ol>
+    ` : ''}
+  `;
+
+  el.innerHTML = `
+    <div class="winner-card">
+      <div class="winner-card-header">
+        <span class="winner-card-type">${title}</span>
+        <span class="winner-card-name">${mainName}</span>
+        <span class="winner-badge">⭐ ${esc(data.winner ?? '')} · ${data.score ?? '—'}/10</span>
+      </div>
+      <div class="winner-card-body">
+        ${data.justification ? `<div class="winner-justification">${esc(data.justification)}</div>` : ''}
+        ${rows}
+      </div>
+    </div>
+  `;
 }
 
 // ── Render: Services (Layer 3) ────────────────────────────────────────────────
