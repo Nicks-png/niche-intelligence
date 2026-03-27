@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Niche Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page">
+
+    <!-- ── Header ─────────────────────────────────────────── -->
+    <header class="header">
+      <div class="brand">
+        <div class="brand-hex">⬡</div>
+        <div>
+          <div class="brand-name">Niche Intelligence</div>
+          <div class="brand-sub">Pipeline de 6 agentes · OpenRouter AI</div>
+        </div>
+      </div>
+      <button class="btn-run" id="btnRun" onclick="runPipeline()">
+        <span id="btnIcon">▶</span>
+        <span id="btnLabel">Iniciar Pipeline</span>
+      </button>
+    </header>
+
+    <!-- ── Pipeline Status ────────────────────────────────── -->
+    <section class="section pipeline-section">
+      <div class="section-header">
+        <span class="section-title">Agentes</span>
+        <span class="section-badge" id="pipelineStatus">aguardando</span>
+      </div>
+
+      <div class="layers">
+        <div class="layer">
+          <div class="layer-tag">Camada 1 — Pesquisa</div>
+          <div class="agents-grid">
+            <div class="agent-card" id="agent-1">
+              <div class="agent-status-icon">⏳</div>
+              <div class="agent-body">
+                <div class="agent-name">Niche Explorer</div>
+                <div class="agent-desc">Identifica 15 nichos de mercado</div>
+              </div>
+              <div class="agent-badge pending" id="badge-1">Aguardando</div>
+            </div>
+            <div class="agent-card" id="agent-2">
+              <div class="agent-status-icon">⏳</div>
+              <div class="agent-body">
+                <div class="agent-name">Review Analyzer</div>
+                <div class="agent-desc">Analisa satisfação do consumidor</div>
+              </div>
+              <div class="agent-badge pending" id="badge-2">Aguardando</div>
+            </div>
+            <div class="agent-card" id="agent-3">
+              <div class="agent-status-icon">⏳</div>
+              <div class="agent-body">
+                <div class="agent-name">Ranker</div>
+                <div class="agent-desc">Seleciona top 5 oportunidades</div>
+              </div>
+              <div class="agent-badge pending" id="badge-3">Aguardando</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="layer-divider">
+          <div class="layer-divider-line"></div>
+          <div class="layer-divider-icon">↓</div>
+          <div class="layer-divider-line"></div>
+        </div>
+
+        <div class="layer">
+          <div class="layer-tag">Camada 2 — Soluções</div>
+          <div class="agents-grid">
+            <div class="agent-card" id="agent-4">
+              <div class="agent-status-icon">⏳</div>
+              <div class="agent-body">
+                <div class="agent-name">Product Strategist</div>
+                <div class="agent-desc">Propõe produtos e serviços</div>
+              </div>
+              <div class="agent-badge pending" id="badge-4">Aguardando</div>
+            </div>
+            <div class="agent-card" id="agent-5">
+              <div class="agent-status-icon">⏳</div>
+              <div class="agent-body">
+                <div class="agent-name">Positioning Expert</div>
+                <div class="agent-desc">Define estratégia de mercado</div>
+              </div>
+              <div class="agent-badge pending" id="badge-5">Aguardando</div>
+            </div>
+            <div class="agent-card" id="agent-6">
+              <div class="agent-status-icon">⏳</div>
+              <div class="agent-body">
+                <div class="agent-name">Viability Analyst</div>
+                <div class="agent-desc">Avalia viabilidade e riscos</div>
+              </div>
+              <div class="agent-badge pending" id="badge-6">Aguardando</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Results ────────────────────────────────────────── -->
+    <section class="section results-section hidden" id="resultsSection">
+      <div class="tabs">
+        <button class="tab active" id="tab-btn-niches" onclick="showTab('niches')">
+          🎯 Nichos Encontrados
+        </button>
+        <button class="tab" id="tab-btn-solutions" onclick="showTab('solutions')">
+          💡 Soluções
+        </button>
+      </div>
+      <div id="tab-niches"></div>
+      <div id="tab-solutions" class="hidden"></div>
+    </section>
+
+    <!-- ── Error Banner ──────────────────────────────────── -->
+    <div class="error-banner hidden" id="errorBanner"></div>
+
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
