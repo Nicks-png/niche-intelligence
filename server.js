@@ -250,6 +250,8 @@ app.get('/run-pipeline', async (req, res) => {
       ),
     ]);
 
+    console.log('[r12]', JSON.stringify(r12).slice(0, 400));
+    console.log('[r16]', JSON.stringify(r16).slice(0, 400));
     emit('agent', { id: 12, status: r12.ok ? 'done' : 'error' });
     emit('agent', { id: 16, status: r16.ok ? 'done' : 'error' });
 
